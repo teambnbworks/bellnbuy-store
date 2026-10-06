@@ -75,12 +75,21 @@ const products: Product[] = [
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState('ALL')
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedProduct, setSelectedProduct] =
+    useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [cartMessage, setCartMessage] = useState('')
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [customerAddress, setCustomerAddress] = useState('')
+  const [customerCity, setCustomerCity] = useState('Karachi')
+  const [orderPlaced, setOrderPlaced] = useState(false)
+  const [orderNumber, setOrderNumber] = useState('')
 
   const filteredProducts =
     activeFilter === 'ALL'
@@ -247,6 +256,36 @@ function App() {
           ),
       ),
     )
+  }
+
+  const openCheckout = () => {
+    setCheckoutOpen(true)
+    setOrderPlaced(false)
+
+    window.setTimeout(() => {
+      document.getElementById('checkout')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 50)
+  }
+
+  const closeCheckout = () => {
+    setCheckoutOpen(false)
+    setOrderPlaced(false)
+  }
+
+  const placeOrder = (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault()
+
+    const generatedOrderNumber =
+      'BNB-' + String(Date.now()).slice(-8)
+
+    setOrderNumber(generatedOrderNumber)
+    setOrderPlaced(true)
+    setCartItems([])
   }
 
   const cartItemCount = cartItems.reduce(
@@ -1011,6 +1050,7 @@ function App() {
               <button
                 type="button"
                 className="add-to-cart"
+                onClick={openCheckout}
               >
                 Proceed to Checkout
               </button>
@@ -1018,6 +1058,200 @@ function App() {
           </div>
         )}
       </section>
+
+      {checkoutOpen && (
+        <section
+          id="checkout"
+          className="checkout-section"
+        >
+          {orderPlaced ? (
+            <div className="checkout-content order-confirmation">
+              <p className="section-eyebrow">
+                ORDER CONFIRMED
+              </p>
+
+              <h1>Thank You for Your Order</h1>
+
+              <p>
+                Your BELLnBUY order has been received
+                successfully.
+              </p>
+
+              <div className="order-number">
+                <span>Order Number</span>
+                <strong>{orderNumber}</strong>
+              </div>
+
+              <div className="order-confirmation-details">
+                <p>
+                  <strong>Payment:</strong> Cash on Delivery
+                </p>
+
+                <p>
+                  <strong>Delivery:</strong> Karachi · Rs. 200
+                </p>
+
+                <p>
+                  <strong>Customer:</strong> {customerName}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setCheckoutOpen(false)
+                  setOrderPlaced(false)
+                }}
+              >
+                Continue Shopping
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="checkout-header">
+                <p className="section-eyebrow">
+                  SECURE CHECKOUT
+                </p>
+
+                <h1>Complete Your Order</h1>
+
+                <p>
+                  Enter your details below to place your
+                  BELLnBUY order.
+                </p>
+              </div>
+
+              <div className="checkout-content">
+                <form onSubmit={placeOrder}>
+                  <div className="checkout-form">
+                    <div className="checkout-field">
+                      <label htmlFor="customer-name">
+                        Full Name
+                      </label>
+
+                      <input
+                        id="customer-name"
+                        type="text"
+                        value={customerName}
+                        onChange={(event) =>
+                          setCustomerName(event.target.value)
+                        }
+                        placeholder="Enter your full name"
+                        required
+                      />
+                    </div>
+
+                    <div className="checkout-field">
+                      <label htmlFor="customer-phone">
+                        Phone Number
+                      </label>
+
+                      <input
+                        id="customer-phone"
+                        type="tel"
+                        value={customerPhone}
+                        onChange={(event) =>
+                          setCustomerPhone(event.target.value)
+                        }
+                        placeholder="03XX XXXXXXX"
+                        required
+                      />
+                    </div>
+
+                    <div className="checkout-field">
+                      <label htmlFor="customer-address">
+                        Complete Delivery Address
+                      </label>
+
+                      <textarea
+                        id="customer-address"
+                        value={customerAddress}
+                        onChange={(event) =>
+                          setCustomerAddress(event.target.value)
+                        }
+                        placeholder="House, street, area, block..."
+                        rows={4}
+                        required
+                      />
+                    </div>
+
+                    <div className="checkout-field">
+                      <label htmlFor="customer-city">
+                        City
+                      </label>
+
+                      <select
+                        id="customer-city"
+                        value={customerCity}
+                        onChange={(event) =>
+                          setCustomerCity(event.target.value)
+                        }
+                        required
+                      >
+                        <option value="Karachi">
+                          Karachi
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="payment-method">
+                    <div>
+                      <span className="payment-label">
+                        Payment Method
+                      </span>
+
+                      <h2>Cash on Delivery</h2>
+
+                      <p>
+                        Pay when your BELLnBUY order is
+                        delivered to you.
+                      </p>
+                    </div>
+
+                    <span className="payment-badge">
+                      COD
+                    </span>
+                  </div>
+
+                  <div className="checkout-summary">
+                    <div className="cart-summary-row">
+                      <span>Items</span>
+                      <strong>{cartItemCount}</strong>
+                    </div>
+
+                    <div className="cart-summary-row">
+                      <span>Delivery</span>
+                      <strong>Rs. 200</strong>
+                    </div>
+
+                    <div className="cart-summary-total">
+                      <span>Total</span>
+                      <strong>Rs. —</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="add-to-cart"
+                  >
+                    Place Order
+                  </button>
+                </form>
+
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={closeCheckout}
+                >
+                  Back to Cart
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
       <footer>
         <p>
