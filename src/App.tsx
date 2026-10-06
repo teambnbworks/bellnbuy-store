@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import logo from './assets/BNB-10-10.png'
 import './App.css'
 
@@ -9,6 +9,8 @@ type Product = {
   price: string
   status: string
   category: string
+  isNewArrival: boolean
+  isFeatured: boolean
 }
 
 type CartItem = {
@@ -29,6 +31,8 @@ const products: Product[] = [
     price: 'Rs. —',
     status: 'COMING SOON',
     category: 'ESSENTIALS',
+    isNewArrival: true,
+    isFeatured: true,
   },
   {
     id: 2,
@@ -37,6 +41,8 @@ const products: Product[] = [
     price: 'Rs. —',
     status: 'COMING SOON',
     category: 'SIGNATURE',
+    isNewArrival: true,
+    isFeatured: true,
   },
   {
     id: 3,
@@ -45,6 +51,8 @@ const products: Product[] = [
     price: 'Rs. —',
     status: 'COMING SOON',
     category: 'ESSENTIALS',
+    isNewArrival: true,
+    isFeatured: true,
   },
   {
     id: 4,
@@ -53,6 +61,8 @@ const products: Product[] = [
     price: 'Rs. —',
     status: 'COMING SOON',
     category: 'DROP SHOULDER',
+    isNewArrival: false,
+    isFeatured: false,
   },
   {
     id: 5,
@@ -61,6 +71,8 @@ const products: Product[] = [
     price: 'Rs. —',
     status: 'COMING SOON',
     category: 'ESSENTIALS',
+    isNewArrival: false,
+    isFeatured: false,
   },
   {
     id: 6,
@@ -69,12 +81,27 @@ const products: Product[] = [
     price: 'Rs. —',
     status: 'COMING SOON',
     category: 'SIGNATURE',
+    isNewArrival: false,
+    isFeatured: false,
   },
 ]
 
 function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState('ALL')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const [reviewName, setReviewName] = useState('')
+  const [reviewText, setReviewText] = useState('')
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
+
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactSubmitted, setContactSubmitted] = useState(false)
+
   const [selectedProduct, setSelectedProduct] =
     useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState('')
@@ -91,15 +118,77 @@ function App() {
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
 
-  const filteredProducts =
-    activeFilter === 'ALL'
-      ? products
-      : products.filter(
-          (product) => product.category === activeFilter,
-        )
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      document.documentElement.style.setProperty(
+        '--cursor-x',
+        event.clientX + 'px',
+      )
+
+      document.documentElement.style.setProperty(
+        '--cursor-y',
+        event.clientY + 'px',
+      )
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+
+    return () => {
+      window.removeEventListener(
+        'mousemove',
+        handleMouseMove,
+      )
+    }
+  }, [])
+
+  const filteredProducts = products.filter((product) => {
+    const matchesFilter =
+      activeFilter === 'ALL' ||
+      product.category === activeFilter
+
+    const matchesSearch =
+      product.name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      product.material
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      product.category
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+
+    return matchesFilter && matchesSearch
+  })
+
+  const productsPerPage = 6
+  const totalPages = 5
+
+  const paginatedProducts =
+    currentPage === 1
+      ? filteredProducts.slice(0, productsPerPage)
+      : []
+
+  const featuredProducts = products
+    .filter((product) => product.isFeatured)
+    .slice(0, 3)
+
+  const newArrivals = products
+    .filter((product) => product.isNewArrival)
+    .slice(0, 3)
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false)
+  }
+
+  const scrollToSection = (sectionId: string) => {
+    closeMobileMenu()
+
+    window.setTimeout(() => {
+      document.getElementById(sectionId)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 50)
   }
 
   const openProduct = (product: Product) => {
@@ -288,6 +377,38 @@ function App() {
     setCartItems([])
   }
 
+  const submitReview = (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault()
+
+    setReviewSubmitted(true)
+    setReviewName('')
+    setReviewText('')
+    setReviewRating(5)
+  }
+
+  const submitContact = (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault()
+
+    setContactSubmitted(true)
+    setContactName('')
+    setContactEmail('')
+    setContactMessage('')
+  }
+
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter)
+    setCurrentPage(1)
+  }
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value)
+    setCurrentPage(1)
+  }
+
   const cartItemCount = cartItems.reduce(
     (total, item) => total + item.quantity,
     0,
@@ -295,6 +416,11 @@ function App() {
 
   return (
     <main>
+      <div
+        className="cursor-glow"
+        aria-hidden="true"
+      />
+
       <div className="announcement-bar">
         Pakistan · Premium Oversized Tees · Crafted for Everyday Luxury
       </div>
@@ -317,6 +443,7 @@ function App() {
           <a href="#new-arrivals">New Arrivals</a>
           <a href="#about">About</a>
           <a href="#contact">Contact</a>
+
           <a href="#cart">
             Cart
             {cartItemCount > 0
@@ -434,6 +561,18 @@ function App() {
         </div>
 
         <div className="shop-toolbar">
+          <div className="shop-search">
+            <input
+              type="search"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(event) =>
+                handleSearchChange(event.target.value)
+              }
+              aria-label="Search products"
+            />
+          </div>
+
           <div className="shop-filters">
             <button
               type="button"
@@ -442,7 +581,7 @@ function App() {
                   ? 'filter-button active'
                   : 'filter-button'
               }
-              onClick={() => setActiveFilter('ALL')}
+              onClick={() => handleFilterChange('ALL')}
             >
               All
             </button>
@@ -454,7 +593,9 @@ function App() {
                   ? 'filter-button active'
                   : 'filter-button'
               }
-              onClick={() => setActiveFilter('ESSENTIALS')}
+              onClick={() =>
+                handleFilterChange('ESSENTIALS')
+              }
             >
               Essentials
             </button>
@@ -466,7 +607,9 @@ function App() {
                   ? 'filter-button active'
                   : 'filter-button'
               }
-              onClick={() => setActiveFilter('SIGNATURE')}
+              onClick={() =>
+                handleFilterChange('SIGNATURE')
+              }
             >
               Signature
             </button>
@@ -479,7 +622,7 @@ function App() {
                   : 'filter-button'
               }
               onClick={() =>
-                setActiveFilter('DROP SHOULDER')
+                handleFilterChange('DROP SHOULDER')
               }
             >
               Drop Shoulder
@@ -491,81 +634,103 @@ function App() {
           </div>
         </div>
 
-        <div className="product-grid">
-          {filteredProducts.map((product) => (
-            <article
-              className="product-card"
-              key={product.id}
-            >
-              <button
-                type="button"
-                className="product-link"
-                onClick={() => openProduct(product)}
-                aria-label="View product"
+        {paginatedProducts.length > 0 ? (
+          <div className="product-grid">
+            {paginatedProducts.map((product) => (
+              <article
+                className="product-card"
+                key={product.id}
               >
-                <div className="product-image">
-                  <span>{product.status}</span>
-                </div>
+                <button
+                  type="button"
+                  className="product-link"
+                  onClick={() => openProduct(product)}
+                  aria-label="View product"
+                >
+                  <div className="product-image">
+                    {product.isNewArrival && (
+                      <small className="product-badge">
+                        NEW ARRIVAL
+                      </small>
+                    )}
 
-                <div className="product-info">
-                  <div>
-                    <h3>{product.name}</h3>
-                    <p>{product.material}</p>
+                    <span>{product.status}</span>
                   </div>
 
-                  <strong>{product.price}</strong>
-                </div>
-              </button>
-            </article>
-          ))}
-        </div>
+                  <div className="product-info">
+                    <div>
+                      <h3>{product.name}</h3>
+                      <p>{product.material}</p>
+                    </div>
+
+                    <strong>{product.price}</strong>
+                  </div>
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state shop-empty-state">
+            <h2>No products found</h2>
+
+            <p>
+              We could not find a product matching your
+              current search or filter.
+            </p>
+
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => {
+                setSearchQuery('')
+                setActiveFilter('ALL')
+                setCurrentPage(1)
+              }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        )}
 
         <div
           className="pagination"
           aria-label="Product pagination"
         >
-          <button
-            className="pagination-number active"
-            type="button"
-          >
-            1
-          </button>
-
-          <button
-            className="pagination-number"
-            type="button"
-          >
-            2
-          </button>
-
-          <button
-            className="pagination-number"
-            type="button"
-          >
-            3
-          </button>
-
-          <button
-            className="pagination-number"
-            type="button"
-          >
-            4
-          </button>
-
-          <button
-            className="pagination-number"
-            type="button"
-          >
-            5
-          </button>
+          {[1, 2, 3, 4, 5].map((page) => (
+            <button
+              key={page}
+              className={
+                currentPage === page
+                  ? 'pagination-number active'
+                  : 'pagination-number'
+              }
+              type="button"
+              disabled={page !== 1}
+              onClick={() => setCurrentPage(page)}
+              aria-label={'Product page ' + page}
+            >
+              {page}
+            </button>
+          ))}
 
           <button
             className="pagination-next"
             type="button"
+            disabled={currentPage >= totalPages}
+            onClick={() =>
+              setCurrentPage((current) =>
+                Math.min(current + 1, totalPages),
+              )
+            }
           >
             Next →
           </button>
         </div>
+
+        <p className="pagination-note">
+          More products and pages will appear automatically
+          as the BELLnBUY collection grows.
+        </p>
       </section>
 
       <section id="new-arrivals">
@@ -584,7 +749,7 @@ function App() {
         </div>
 
         <div className="product-grid">
-          {products.slice(0, 3).map((product) => (
+          {newArrivals.map((product) => (
             <article
               className="product-card"
               key={product.id}
@@ -596,7 +761,11 @@ function App() {
                 aria-label="View new arrival"
               >
                 <div className="product-image">
-                  <span>NEW ARRIVAL</span>
+                  <small className="product-badge">
+                    NEW ARRIVAL
+                  </small>
+
+                  <span>{product.status}</span>
                 </div>
 
                 <div className="product-info">
@@ -610,6 +779,133 @@ function App() {
               </button>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section id="featured">
+        <div className="section-heading">
+          <p className="section-eyebrow">
+            BELLnBUY EDIT
+          </p>
+
+          <h2>Featured Pieces</h2>
+
+          <p>
+            A curated selection of BELLnBUY essentials built
+            around clean silhouettes and everyday versatility.
+          </p>
+        </div>
+
+        <div className="product-grid">
+          {featuredProducts.map((product) => (
+            <article
+              className="product-card"
+              key={product.id}
+            >
+              <button
+                type="button"
+                className="product-link"
+                onClick={() => openProduct(product)}
+                aria-label="View featured product"
+              >
+                <div className="product-image">
+                  <small className="product-badge">
+                    FEATURED
+                  </small>
+
+                  <span>{product.status}</span>
+                </div>
+
+                <div className="product-info">
+                  <div>
+                    <h3>{product.name}</h3>
+                    <p>{product.material}</p>
+                  </div>
+
+                  <strong>{product.price}</strong>
+                </div>
+              </button>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section
+        id="about"
+        className="about-section"
+      >
+        <div className="section-heading">
+          <p className="section-eyebrow">
+            THE BRAND
+          </p>
+
+          <h2>About BELLnBUY</h2>
+
+          <p>
+            Minimal streetwear. Premium oversized tees.
+            Crafted for Everyday Luxury.
+          </p>
+        </div>
+
+        <div className="about-grid">
+          <div className="about-copy">
+            <p>
+              BELLnBUY is built around a simple idea:
+              everyday clothing should feel premium without
+              becoming complicated.
+            </p>
+
+            <p>
+              Our focus is on oversized silhouettes, clean
+              design, comfortable materials and timeless
+              styling that fits naturally into everyday life.
+            </p>
+
+            <p>
+              From essential pieces to statement drops, every
+              BELLnBUY collection is designed with a minimal
+              streetwear mindset.
+            </p>
+          </div>
+
+          <div className="about-values">
+            <div className="about-value">
+              <span>01</span>
+
+              <div>
+                <h3>Minimal Design</h3>
+
+                <p>
+                  Clean silhouettes and intentional details.
+                </p>
+              </div>
+            </div>
+
+            <div className="about-value">
+              <span>02</span>
+
+              <div>
+                <h3>Premium Feel</h3>
+
+                <p>
+                  Focused on quality, comfort and everyday wear.
+                </p>
+              </div>
+            </div>
+
+            <div className="about-value">
+              <span>03</span>
+
+              <div>
+                <h3>Made for Everyday</h3>
+
+                <p>
+                  Versatile pieces designed to become daily
+                  essentials.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -843,68 +1139,241 @@ function App() {
           </div>
         </div>
 
-        <div className="reviews-section">
-          <div className="reviews-header">
-            <h2>Customer Reviews</h2>
+        <div className="reviews-section" id="reviews">
+          <div className="section-heading">
+            <p className="section-eyebrow">
+              CUSTOMER FEEDBACK
+            </p>
 
-            <div className="review-summary">
-              <span className="review-stars">
-                ★★★★★
-              </span>
-
-              <span className="review-score">
-                No reviews yet
-              </span>
-            </div>
-          </div>
-
-          <div className="empty-state">
-            <h2>Be the first to review</h2>
+            <h2>Reviews</h2>
 
             <p>
-              Customer reviews will appear here after
-              approved reviews are submitted.
+              Your experience matters. Share your thoughts
+              about BELLnBUY.
             </p>
+          </div>
+
+          <div className="reviews-layout">
+            <div className="reviews-summary">
+              <div className="reviews-rating">
+                ★★★★★
+              </div>
+
+              <h3>Love the fit?</h3>
+
+              <p>
+                Tell us what you think about your BELLnBUY
+                experience.
+              </p>
+            </div>
+
+            <form
+              className="review-form"
+              onSubmit={submitReview}
+            >
+              <div className="review-field">
+                <label htmlFor="review-name">
+                  Your Name
+                </label>
+
+                <input
+                  id="review-name"
+                  type="text"
+                  value={reviewName}
+                  onChange={(event) =>
+                    setReviewName(event.target.value)
+                  }
+                  placeholder="Enter your name"
+                  required
+                />
+              </div>
+
+              <div className="review-field">
+                <label>Rating</label>
+
+                <div className="review-stars">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      className={
+                        star <= reviewRating
+                          ? 'review-star active'
+                          : 'review-star'
+                      }
+                      onClick={() =>
+                        setReviewRating(star)
+                      }
+                      aria-label={
+                        'Give ' +
+                        star +
+                        ' star rating'
+                      }
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="review-field">
+                <label htmlFor="review-text">
+                  Your Review
+                </label>
+
+                <textarea
+                  id="review-text"
+                  value={reviewText}
+                  onChange={(event) =>
+                    setReviewText(event.target.value)
+                  }
+                  placeholder="Write your review..."
+                  rows={5}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="add-to-cart review-submit"
+              >
+                Submit Review
+              </button>
+
+              {reviewSubmitted && (
+                <p className="review-success">
+                  Thank you! Your review has been submitted
+                  for approval.
+                </p>
+              )}
+            </form>
           </div>
         </div>
       </section>
 
-      <section id="about">
-        <div className="section-heading">
-          <p className="section-eyebrow">
-            THE BRAND
-          </p>
-
-          <h2>About BELLnBUY</h2>
-
-          <p>
-            Minimal streetwear. Premium oversized tees.
-            Crafted for Everyday Luxury.
-          </p>
-        </div>
-      </section>
-
-      <section id="contact">
+      <section
+        id="contact"
+        className="contact-section"
+      >
         <div className="section-heading">
           <p className="section-eyebrow">
             GET IN TOUCH
           </p>
 
-          <h2>Contact</h2>
+          <h2>Let's Talk</h2>
 
           <p>
-            Have a question about an order or product?
-            Get in touch with BELLnBUY.
+            Have a question about an order, product or
+            BELLnBUY? Send us a message.
           </p>
+        </div>
 
-          <a
-            href="https://www.instagram.com/bellnbuy/"
-            className="contact-link"
-            target="_blank"
-            rel="noreferrer"
+        <div className="contact-layout">
+          <div className="contact-information">
+            <div className="contact-block">
+              <span>EMAIL</span>
+
+              <a href="mailto:teambnbworks@gmail.com">
+                teambnbworks@gmail.com
+              </a>
+            </div>
+
+            <div className="contact-block">
+              <span>INSTAGRAM</span>
+
+              <a
+                href="https://www.instagram.com/bellnbuy/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                @bellnbuy
+              </a>
+            </div>
+
+            <div className="contact-block">
+              <span>LOCATION</span>
+
+              <p>Karachi, Pakistan</p>
+            </div>
+
+            <div className="contact-block">
+              <span>ORDERS</span>
+
+              <p>
+                Karachi delivery · Rs. 200 · Cash on Delivery
+              </p>
+            </div>
+          </div>
+
+          <form
+            className="contact-form"
+            onSubmit={submitContact}
           >
-            Instagram →
-          </a>
+            <div className="contact-field">
+              <label htmlFor="contact-name">
+                Your Name
+              </label>
+
+              <input
+                id="contact-name"
+                type="text"
+                value={contactName}
+                onChange={(event) =>
+                  setContactName(event.target.value)
+                }
+                placeholder="Enter your name"
+                required
+              />
+            </div>
+
+            <div className="contact-field">
+              <label htmlFor="contact-email">
+                Email Address
+              </label>
+
+              <input
+                id="contact-email"
+                type="email"
+                value={contactEmail}
+                onChange={(event) =>
+                  setContactEmail(event.target.value)
+                }
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
+            <div className="contact-field">
+              <label htmlFor="contact-message">
+                Message
+              </label>
+
+              <textarea
+                id="contact-message"
+                value={contactMessage}
+                onChange={(event) =>
+                  setContactMessage(event.target.value)
+                }
+                placeholder="How can we help?"
+                rows={6}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="add-to-cart"
+            >
+              Send Message
+            </button>
+
+            {contactSubmitted && (
+              <p className="contact-success">
+                Thank you! Your message has been received.
+                We will get back to you soon.
+              </p>
+            )}
+          </form>
         </div>
       </section>
 
@@ -1094,6 +1563,10 @@ function App() {
                 <p>
                   <strong>Customer:</strong> {customerName}
                 </p>
+
+                <p>
+                  <strong>Phone:</strong> {customerPhone}
+                </p>
               </div>
 
               <button
@@ -1253,23 +1726,226 @@ function App() {
         </section>
       )}
 
-      <footer>
-        <p>
-          © 2026 BELLnBUY. All rights reserved.
-        </p>
+      <section
+        id="shipping"
+        className="information-section"
+      >
+        <div className="information-grid">
+          <div>
+            <p className="section-eyebrow">
+              DELIVERY
+            </p>
 
-        <div className="footer-links">
-          <a href="#shop">Shop</a>
-          <a href="#about">About</a>
-          <a href="#contact">Contact</a>
+            <h2>Shipping Information</h2>
+          </div>
+
+          <div>
+            <p>
+              BELLnBUY currently offers delivery within
+              Karachi.
+            </p>
+
+            <p>
+              Standard delivery is charged at Rs. 200 per
+              order.
+            </p>
+
+            <p>
+              Orders are placed through Cash on Delivery.
+              Delivery timing and order confirmation will be
+              communicated as the store moves into its live
+              ordering phase.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="returns"
+        className="information-section"
+      >
+        <div className="information-grid">
+          <div>
+            <p className="section-eyebrow">
+              RETURNS
+            </p>
+
+            <h2>Returns & Exchanges</h2>
+          </div>
+
+          <div>
+            <p>
+              Return and exchange eligibility will be based
+              on the final BELLnBUY store policy.
+            </p>
+
+            <p>
+              Products must remain unused and in their
+              original condition when an eligible return or
+              exchange is requested.
+            </p>
+
+            <p>
+              Full operational return rules will be finalized
+              before the store goes live with real inventory.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="privacy"
+        className="information-section"
+      >
+        <div className="information-grid">
+          <div>
+            <p className="section-eyebrow">
+              PRIVACY
+            </p>
+
+            <h2>Privacy Policy</h2>
+          </div>
+
+          <div>
+            <p>
+              BELLnBUY will only use customer information
+              needed to process orders, communicate about
+              purchases and provide customer support.
+            </p>
+
+            <p>
+              Customer information will not be displayed
+              publicly on the website.
+            </p>
+
+            <p>
+              The final production privacy policy will be
+              completed before live database and order
+              processing are enabled.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="terms"
+        className="information-section"
+      >
+        <div className="information-grid">
+          <div>
+            <p className="section-eyebrow">
+              TERMS
+            </p>
+
+            <h2>Terms & Conditions</h2>
+          </div>
+
+          <div>
+            <p>
+              By placing an order through BELLnBUY, customers
+              agree to provide accurate contact and delivery
+              information.
+            </p>
+
+            <p>
+              Product availability, pricing, delivery,
+              returns and exchanges will be governed by the
+              final published BELLnBUY store policies.
+            </p>
+
+            <p>
+              Final production terms will be completed before
+              live commerce functionality is enabled.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="final-cta">
+        <div>
+          <p className="section-eyebrow">
+            BELLnBUY
+          </p>
+
+          <h2>
+            Crafted for Everyday Luxury.
+          </h2>
+
+          <p>
+            Minimal streetwear designed to become part of
+            your everyday wardrobe.
+          </p>
 
           <a
-            href="https://www.instagram.com/bellnbuy/"
-            target="_blank"
-            rel="noreferrer"
+            href="#shop"
+            className="hero-button"
           >
-            Instagram
+            Explore the Collection
           </a>
+        </div>
+      </section>
+
+      <footer>
+        <div className="footer-main">
+          <div className="footer-brand">
+            <img
+              src={logo}
+              alt="BELLnBUY"
+              width="170"
+            />
+
+            <p>
+              Minimal Streetwear.
+              <br />
+              Premium Oversized Tees.
+              <br />
+              Crafted for Everyday Luxury.
+            </p>
+
+            <a
+              href="https://www.instagram.com/bellnbuy/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Instagram →
+            </a>
+          </div>
+
+          <div className="footer-column">
+            <h3>Shop</h3>
+
+            <a href="#shop">All Products</a>
+            <a href="#new-arrivals">New Arrivals</a>
+            <a href="#featured">Featured</a>
+            <a href="#cart">Cart</a>
+          </div>
+
+          <div className="footer-column">
+            <h3>Information</h3>
+
+            <a href="#about">About</a>
+            <a href="#shipping">Shipping</a>
+            <a href="#returns">Returns & Exchanges</a>
+            <a href="#contact">Contact</a>
+          </div>
+
+          <div className="footer-column">
+            <h3>Policies</h3>
+
+            <a href="#privacy">Privacy Policy</a>
+            <a href="#terms">Terms & Conditions</a>
+            <a href="#reviews">Reviews</a>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <p>
+            © 2026 BELLnBUY. All rights reserved.
+          </p>
+
+          <p>
+            Karachi · Pakistan
+          </p>
         </div>
       </footer>
     </main>
