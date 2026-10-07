@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import type {
+  CSSProperties,
+  FormEvent,
+} from 'react'
 import logo from './assets/BNB-10-10.png'
 import './App.css'
 import Admin from './Admin'
@@ -309,17 +312,6 @@ function Storefront() {
 
   /*
    * LOAD PRODUCTS FROM SUPABASE
-   *
-   * IMPORTANT:
-   * products table uses:
-   * is_active
-   * compare_at_price
-   * product_type
-   *
-   * NOT:
-   * published
-   * compare_price
-   * status
    */
   useEffect(() => {
     let mounted = true
@@ -349,17 +341,13 @@ function Storefront() {
             error,
           )
 
-          setProducts(
-            fallbackProducts,
-          )
+          setProducts(fallbackProducts)
           setProductsLoading(false)
           return
         }
 
         if (!data || data.length === 0) {
-          setProducts(
-            fallbackProducts,
-          )
+          setProducts(fallbackProducts)
           setProductsLoading(false)
           return
         }
@@ -367,13 +355,6 @@ function Storefront() {
         const dbProducts =
           data as DbProduct[]
 
-        /*
-         * Product images and variants are optional
-         * related data.
-         *
-         * If their SELECT policies are not ready yet,
-         * the products themselves will STILL load.
-         */
         const productIds =
           dbProducts.map(
             (product) =>
@@ -1063,26 +1044,6 @@ function Storefront() {
 
   /*
    * PLACE REAL SUPABASE ORDER
-   *
-   * IMPORTANT:
-   * This matches the current orders table schema:
-   *
-   * customer_email
-   * customer_phone
-   * delivery_address
-   * delivery_area
-   * delivery_city
-   * delivery_province
-   * delivery_postal_code
-   * subtotal
-   * delivery_fee
-   * total_amount
-   *
-   * order_items uses:
-   *
-   * product_name
-   * unit_price
-   * total_price
    */
   const placeOrder = async (
     event: FormEvent<HTMLFormElement>,
@@ -1350,7 +1311,7 @@ function Storefront() {
    */
   const getProductImageStyle = (
     imageUrl?: string,
-  ): React.CSSProperties => {
+  ): CSSProperties => {
     if (!imageUrl) {
       return {}
     }
